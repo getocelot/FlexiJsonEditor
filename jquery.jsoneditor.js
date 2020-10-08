@@ -101,13 +101,27 @@
 
     function error(reason) { if (window.console) { console.error(reason); } }
 
-    function parse(str) {
+    function parse(str, parsed) {
+        // Replaced original parse() with this one to allow user to enter well-
+        // structured json or string (without quotes) to have it automatically
+        // get quoted.
+        // This messy thing borrowed from:
+        // https://github.com/DavidDurman/FlexiJsonEditor/issues/24#issue-37630424
+        // where a step toward a proposed cleaner but incomplete solution also
+        // exists.
         var res;
+        var fail = false;
         try { res = JSON.parse(str); }
-        catch (e) { res = null; error('JSON parse failed.'); }
+        catch (e) { res = null; if(parsed === true){error('JSON parse failed.')}; fail = true;}
+        if(fail === true && parsed !== true){
+          var j = $("<div/>").text(str.replace(/\n/g, '\\n'));
+          j.text(j.html().replace(/"/g, '&quot;'));
+          var val = j.html();
+          res = parse('"'+val+'"', true);
+        }
         return res;
-    }
-
+      }
+  
     function stringify(obj) {
         var res;
         try { res = JSON.stringify(obj); }
