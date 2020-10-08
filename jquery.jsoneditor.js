@@ -1,9 +1,15 @@
-// Simple yet flexible JSON editor plugin.
-// Turns any element into a stylable interactive JSON editor.
-
-// Copyright (c) 2013 David Durman
-
-// Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php).
+/**
+ * Simple yet flexible JSON editor plugin.
+ *
+ * Turns any element into a stylable interactive JSON editor.
+ *
+ * @see https://github.com/DavidDurman/FlexiJsonEditor
+ *
+ * Copyright (c) 2013 David Durman
+ * (with only slight Ocelot modifications)
+ *
+ * Licensed under the MIT license (http://www.opensource.org/licenses/mit-license.php).
+ */
 
 // Dependencies:
 
@@ -18,23 +24,23 @@
 //     /* opt.valueElement = '<textarea>'; */  // element of the value field, <input> is default
 //     $('#mydiv').jsonEditor(myjson, opt);
 
-(function( $ ) {
+(function ($) {
 
-    $.fn.jsonEditor = function(json, options) {
+    $.fn.jsonEditor = function (json, options) {
         options = options || {};
         // Make sure functions or other non-JSON data types are stripped down.
         json = parse(stringify(json));
-        
-        var K = function() {};
+
+        var K = function () { };
         var onchange = options.change || K;
         var onpropertyclick = options.propertyclick || K;
 
-        return this.each(function() {
+        return this.each(function () {
             JSONEditor($(this), json, onchange, onpropertyclick, options.propertyElement, options.valueElement);
         });
-        
+
     };
-    
+
     function JSONEditor(target, json, onchange, onpropertyclick, propertyElement, valueElement) {
         var opt = {
             target: target,
@@ -45,7 +51,7 @@
             valueElement: valueElement
         };
         construct(opt, json, opt.target);
-        $(opt.target).on('blur focus', '.property, .value', function() {
+        $(opt.target).on('blur focus', '.property, .value', function () {
             $(this).toggleClass('editing');
         });
     }
@@ -63,7 +69,7 @@
     //      feed({}, 'foo.bar.baz', 10);    // returns { foo: { bar: { baz: 10 } } }
     function feed(o, path, value) {
         var del = arguments.length == 2;
-        
+
         if (path.indexOf('.') > -1) {
             var diver = o,
                 i = 0,
@@ -94,7 +100,7 @@
     }
 
     function error(reason) { if (window.console) { console.error(reason); } }
-    
+
     function parse(str) {
         var res;
         try { res = JSON.parse(str); }
@@ -108,11 +114,11 @@
         catch (e) { res = 'null'; error('JSON stringify failed.'); }
         return res;
     }
-    
+
     function addExpander(item) {
         if (item.children('.expander').length == 0) {
-            var expander =   $('<span>',  { 'class': 'expander' });
-            expander.bind('click', function() {
+            var expander = $('<span>', { 'class': 'expander' });
+            expander.bind('click', function () {
                 var item = $(this).parent();
                 item.toggleClass('expanded');
             });
@@ -122,7 +128,7 @@
 
     function addListAppender(item, handler) {
         var appender = $('<div>', { 'class': 'item appender' }),
-            btn      = $('<button></button>', { 'class': 'property' });
+            btn = $('<button></button>', { 'class': 'property' });
 
         btn.text('Add New Value');
 
@@ -154,26 +160,26 @@
 
         return false;
     }
-    
+
     function construct(opt, json, root, path) {
         path = path || '';
-        
+
         root.children('.item').remove();
-        
+
         for (var key in json) {
             if (!json.hasOwnProperty(key)) continue;
 
-            var item     = $('<div>',   { 'class': 'item', 'data-path': path }),
-                property =   $(opt.propertyElement || '<input>', { 'class': 'property' }),
-                value    =   $(opt.valueElement || '<input>', { 'class': 'value'    });
+            var item = $('<div>', { 'class': 'item', 'data-path': path }),
+                property = $(opt.propertyElement || '<input>', { 'class': 'property' }),
+                value = $(opt.valueElement || '<input>', { 'class': 'value' });
 
             if (isObject(json[key]) || isArray(json[key])) {
                 addExpander(item);
             }
-            
+
             item.append(property).append(value);
             root.append(item);
-            
+
             property.val(key).attr('title', key);
             var val = stringify(json[key]);
             value.val(val).attr('title', val);
@@ -183,7 +189,7 @@
             property.change(propertyChanged(opt));
             value.change(valueChanged(opt));
             property.click(propertyClicked(opt));
-            
+
             if (isObject(json[key]) || isArray(json[key])) {
                 construct(opt, json[key], item, (path ? path + '.' : '') + key);
             }
@@ -199,7 +205,7 @@
     }
 
     function updateParents(el, opt) {
-        $(el).parentsUntil(opt.target).each(function() {
+        $(el).parentsUntil(opt.target).each(function () {
             var path = $(this).data('path');
             path = (path ? path + '.' : path) + $(this).children('.property').val();
             var val = stringify(def(opt.original, path, null));
@@ -208,18 +214,18 @@
     }
 
     function propertyClicked(opt) {
-        return function() {
-            var path = $(this).parent().data('path');            
+        return function () {
+            var path = $(this).parent().data('path');
             var key = $(this).attr('title');
 
             var safePath = path ? path.split('.').concat([key]).join('\'][\'') : key;
-            
+
             opt.onpropertyclick('[\'' + safePath + '\']');
         };
     }
-    
+
     function propertyChanged(opt) {
-        return function() {
+        return function () {
             var path = $(this).parent().data('path'),
                 val = parse($(this).next().val()),
                 newKey = $(this).val(),
@@ -233,13 +239,13 @@
             updateParents(this, opt);
 
             if (!newKey) $(this).parent().remove();
-            
+
             opt.onchange(parse(stringify(opt.original)));
         };
     }
 
     function valueChanged(opt) {
-        return function() {
+        return function () {
             var key = $(this).prev().val(),
                 val = parse($(this).val() || 'null'),
                 item = $(this).parent(),
@@ -256,14 +262,14 @@
             assignType(item, val);
 
             updateParents(this, opt);
-            
+
             opt.onchange(parse(stringify(opt.original)));
         };
     }
-    
+
     function assignType(item, val) {
         var className = 'null';
-        
+
         if (isObject(val)) className = 'object';
         else if (isArray(val)) className = 'array';
         else if (isBoolean(val)) className = 'boolean';
@@ -274,4 +280,4 @@
         item.addClass(className);
     }
 
-})( jQuery );
+})(jQuery);
